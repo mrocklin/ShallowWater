@@ -69,10 +69,9 @@ def evolveEuler(eta, u, v, g, dt=dt):
     >>> eta, u, v = trajectory.next()
     >>> imshow(eta)
     """
-
-    yield eta, u, v # return initial conditions as first state in sequence
-
     time = 0
+    yield eta, u, v, time # return initial conditions as first state in sequence
+
     while(True):
         deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g)
 
@@ -81,23 +80,24 @@ def evolveEuler(eta, u, v, g, dt=dt):
         v = v + dv_dt * dt
         time += dt
 
-        yield eta, u, v
+        yield eta, u, v, time
 
-def demo(eta=eta, u=u, v=v, g=g, dt=dt, numsteps=3000):
+def demo(eta=eta, u=u, v=v, g=g, dt=dt, endTime=.3):
     trajectory = evolveEuler(eta, u, v, g, dt)
 
     # Figure with initial conditions
+    eta, u, v, time = trajectory.next()
     figure(); title('Initial conditions')
-    eta, u, v = trajectory.next()
     imshow(eta); colorbar()
 
     # Burn some time
-    for i in xrange(numsteps):
-        _ = trajectory.next()
+    time = 0
+    while(time < endTime):
+        _, _, _, time = trajectory.next()
 
     # Figure after some time has passed
-    figure(); title('After %d steps ; time=%f'%(numsteps, numsteps*dt))
-    eta, u, v = trajectory.next()
+    eta, u, v, time = trajectory.next()
+    figure(); title('time=%f'%time)
     imshow(eta); colorbar()
 
 #=========================================
