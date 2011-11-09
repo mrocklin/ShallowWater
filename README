@@ -3,7 +3,7 @@ ShallowWater
 
 This is a simple implementation of the Shallow Water equations in Python using numpy for computation. 
 
-The equations were taken from wikipedia the relevant wikipedia article
+The equations were taken from the relevant wikipedia article.
 http://en.wikipedia.org/wiki/Shallow_water_equations
 
 The time stepping scheme is simple Euler
