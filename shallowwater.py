@@ -65,8 +65,8 @@ def evolveEuler(eta, u, v, g, dt=dt):
     Returns an generator / infinite list of all states in the evolution
 
     >>> trajectory = evolveEuler(eta, u, v, g)
-    >>> eta, u, v = trajectory.next()
-    >>> eta, u, v = trajectory.next()
+    >>> eta, u, v, time = trajectory.next()
+    >>> eta, u, v, time = trajectory.next()
     >>> imshow(eta)
     """
     time = 0
