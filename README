@@ -1,13 +1,46 @@
 ShallowWater
 ============
 
-This is a simple implementation of the Shallow Water equations in Python using numpy for computation. 
+This is a simple implementation of the Shallow Water equations in Python using numpy or Theano for computation. 
 
 The equations were taken from the relevant wikipedia article.
 http://en.wikipedia.org/wiki/Shallow_water_equations
 
 The time stepping scheme is simple Euler
 
-To see results run demo()
+To see results run shallowwater_simple.demo()
+>>> from shallowwater_simple import demo
+>>> demo()
 
 depends on numpy and matplotlib for plotting
+
+Theano
+------
+
+This code also demonstrates the use of Theano. It is being used to test how 
+effective theano might be for the solution of partial differential equations
+and their derivatives. 
+
+Code Structure
+--------------
+
+The main code is split into three files:
+shallowwater_base :
+    Contains shallowwater solution code that is numpy/theano agnostic. 
+    This code is written very close to the mathematical solution.
+    It supports two files
+
+shallowwater_python : 
+    Uses shallowwater_base, numpy, and python iterators to solve the equations
+    
+shallowwater_theano : 
+    Uses shallowwater_base and the theano project to generate code.
+    Depends currently on my roll_op branch of theano
+
+There is an additional file for clarity
+
+shallowwater_simple :
+    Is a simple, self contained solution equivalent to shallowwater_python. 
+    This file is simple and independent from the rest of the code. 
+    It is intended to serve as a clear example of the problem to be solved and
+    is a great place to start if just arriving at this code. 
