@@ -34,26 +34,34 @@ def evolveTime(g, endTime, dt=dt):
 
     numsteps = int(endTime/dt)
 
+#    eta,u,v = eta_in, u_in, v_in
+#    for i in xrange(numsteps):
+#        eta,u,v = step(eta,u,v,g,dt)
+#    eta_out, u_out, v_out = eta,u,v
+#    eta_out.name = 'eta_out'
+#    u_out.name = 'u_out'
+#    v_out.name = 'v_out'
+
     in_state = (eta_in, u_in, v_in)
     result, updates = theano.scan(
             fn = lambda eta,u,v: step(eta,u,v, g, dt),
             outputs_info = in_state,
-            n_steps = numsteps)
+            n_steps = numsteps, name='myScanOp')
 
-    eta_out = result[0][-1]
-    u_out = result[1][-1]
-    v_out = result[2][-1]
+    eta_out = result[0][-1]; eta_out.name = 'eta_out'
+    u_out = result[1][-1]; u_out.name = 'u_out'
+    v_out = result[2][-1]; v_out.name = 'v_out'
 
     return eta_in, u_in, v_in, eta_out, u_out, v_out
 
-def build_f(g, endTime, dt=dt):
+def build_f(g, endTime, dt=dt, **kwargs):
     eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(g,endTime, dt)
 
-    f = theano.function([eta_in, u_in, v_in], [eta_out, u_out, v_out])
+    f = theano.function([eta_in, u_in, v_in], [eta_out, u_out, v_out], **kwargs)
 
     return f
 
-def build_fp(g, endTime, dt=dt):
+def build_fp(g, endTime, dt=dt, **kwargs):
     eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(g,endTime, dt)
 
     deta_in = make2DTensor('deta')
@@ -64,7 +72,7 @@ def build_fp(g, endTime, dt=dt):
             (eta_in, u_in, v_in), (deta_in, du_in, dv_in))
 
     fp = theano.function([eta_in, u_in, v_in, deta_in, du_in, dv_in],
-            [deta_out, du_out, dv_out])
+            [deta_out, du_out, dv_out], **kwargs)
 
     return fp
 

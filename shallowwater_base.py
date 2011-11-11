@@ -20,6 +20,17 @@ grid_spacing =  1.0*box_size / n
 g = 1. # Gravity
 dt = grid_spacing / 100.
 
+def roll_theano(x, shift, axis):
+    ndim = 2
+    allslice = slice(0,n,1)
+    shift = shift % n
+    front_slice = slice(shift,n,1)
+    front_list = [allslice]*axis + [front_slice] + [allslice]*(ndim-axis-1)
+    end_slice = slice(0,shift,1)
+    end_list = [allslice]*axis + [end_slice] + [allslice]*(ndim-axis-1)
+    return T.join(axis,
+                T.Subtensor(front_list)(x),
+                T.Subtensor(end_list)(x))
 
 def roll(x, shift, axis):
     """
@@ -31,7 +42,8 @@ def roll(x, shift, axis):
     if isinstance(x, np.ndarray):
         return np.roll(x, shift, axis)
     if isinstance(x, T.basic.TensorVariable):
-        return T.RollOp(shift, axis)(x)
+        return roll_theano(x, shift, axis)
+#        return T.RollOp(shift, axis)(x)
     raise NotImplementedError()
 
 def spatial_derivative(A, axis=0):
