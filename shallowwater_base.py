@@ -1,6 +1,7 @@
 import numpy as np
 import theano.tensor as T
 from pylab import figure, imshow, title, colorbar
+from sys import maxint
 
 # Initial Conditions
 n = 100
@@ -21,10 +22,10 @@ g = 1. # Gravity
 dt = grid_spacing / 100.
 
 def roll_theano(x, shift, axis):
-    ndim = 2
-    allslice = slice(0,n,1)
+    ndim = 2 # how do I compute the number of dimensions from x?
+    allslice = slice(0,maxint,1)
     shift = shift % n
-    front_slice = slice(shift,n,1)
+    front_slice = slice(shift,maxint,1)
     front_list = [allslice]*axis + [front_slice] + [allslice]*(ndim-axis-1)
     end_slice = slice(0,shift,1)
     end_list = [allslice]*axis + [end_slice] + [allslice]*(ndim-axis-1)
