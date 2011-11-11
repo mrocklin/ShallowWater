@@ -95,14 +95,14 @@ def build_fp_bulk(g, endTime, n, dt=dt):
 def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, endTime=.3):
 
     # Create time evolution function
-    f = evolveTime(1, endTime, dt)
+    f = build_f(1, endTime, dt=dt)
 
     # Figure with initial conditions
     figure(); title('Initial conditions')
     imshow(eta); colorbar()
 
     # evolve forward in time
-    eta, u, v = f(eta_start, u_start, v_start)
+    eta, u, v = f(eta, u, v)
 
     # Figure after some time has passed
     figure(); title('time=%f'%endTime)
