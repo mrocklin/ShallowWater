@@ -46,7 +46,7 @@ def evolveTime(g, endTime, dt=dt):
     result, updates = theano.scan(
             fn = lambda eta,u,v: step(eta,u,v, g, dt),
             outputs_info = in_state,
-            n_steps = numsteps, name='myScanOp')
+            n_steps = numsteps, name='timeEvolutionScanOp')
 
     eta_out = result[0][-1]; eta_out.name = 'eta_out'
     u_out = result[1][-1]; u_out.name = 'u_out'
@@ -77,20 +77,45 @@ def build_fp(g, endTime, dt=dt, **kwargs):
     return fp
 
 def build_fp_bulk(g, endTime, n, dt=dt):
+    # the normal computation of eta_out, u_out, v_out = f(eta_in, u_in, v_in)
     eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(g,endTime, dt)
 
-    deta_ins = [make2DTensor('deta_%d'%i) for i in xrange(n)]
-    du_ins = [make2DTensor('du_%d'%i) for i in xrange(n)]
-    dv_ins = [make2DTensor('dv_%d'%i) for i in xrange(n)]
+    make3DTensor = lambda name : T.TensorType(dtype='float64',
+            broadcastable=(False,False,False))(name)
 
-    deta_outs, du_outs, dv_outs = zip(*[
-            T.Rop((eta_out, u_out, v_out), (eta_in, u_in, v_in), (de,du,dv))
-            for de,du,dv in zip(deta_ins, du_ins, dv_ins)])
+    # Input stacks to hold of delta x
+    deta_in_stack = make3DTensor('deta_in_stack')
+    du_in_stack = make3DTensor('du_in_stack')
+    dv_in_stack = make3DTensor('dv_in_stack')
+    deta_outs = []
+    du_outs = []
+    dv_outs = []
 
-    fp = theano.function([eta_in, u_in, v_in, deta_ins, du_ins, dv_ins],
-            [deta_outs, du_outs, dv_outs])
+    for i in range(n):
+        # Grab slices off of the input stack
+        deta_in = deta_in_stack[i]; deta_in.name='deta_in_%d'%i
+        du_in = du_in_stack[i]; du_in.name='du_in_%d'%i
+        dv_in = dv_in_stack[i]; dv_in.name='dv_in_%d'%i
+        # Evolve them with the R_op
+        deta_out, du_out, dv_out = T.Rop((eta_out, u_out, v_out),
+                (eta_in, u_in, v_in), (deta_in, du_in, dv_in))
 
-    return fp
+        # Add results to a list of outputs
+        deta_outs.append(deta_out); deta_out.name = 'deta_out_%d'%i
+        du_outs.append(du_out); du_out.name = 'du_out_%d'%i
+        dv_outs.append(dv_out); dv_out.name = 'dv_out_%d'%i
+
+    # Stack list of outputs into an output array
+    deta_out_stack = T.join(0, deta_outs); deta_out_stack.name='deta_out_stack'
+    du_out_stack = T.join(0, du_outs); du_out_stack.name='du_out_stack'
+    dv_out_stack = T.join(0, dv_outs); dv_out_stack.name='dv_out_stack'
+
+    # Create theano function x_in, dx_in_stack => dx_out_stack
+    fp_bulk = theano.function([eta_in, u_in, v_in,
+        deta_in_stack, du_in_stack, dv_in_stack],
+        [deta_out_stack, du_out_stack, dv_out_stack])
+
+    return fp_bulk
 
 def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, endTime=.3):
 
