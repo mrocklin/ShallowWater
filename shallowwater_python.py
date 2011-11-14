@@ -1,6 +1,6 @@
 from shallowwater_base import *
 
-def evolveEuler(eta, u, v, g, dt=dt):
+def evolveEuler(eta, u, v, g, dt=dt, b=0):
     """
     Evolve state (eta, u, v, g) forward in time using simple Euler method
     x_{n+1} = x_{n} +   dx/dt * d_t
@@ -16,7 +16,7 @@ def evolveEuler(eta, u, v, g, dt=dt):
     yield eta, u, v, time # return initial conditions as first state in sequence
 
     while(True):
-        eta, u, v = step(eta, u, v, g, dt)
+        eta, u, v = step(eta, u, v, g, dt, b)
         time += dt
 
         yield eta, u, v, time

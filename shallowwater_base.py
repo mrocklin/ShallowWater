@@ -4,7 +4,7 @@ from pylab import figure, imshow, title, colorbar
 from sys import maxint
 
 # Initial Conditions
-n = 100
+n = 50
 u_start = np.zeros((n,n)) # velocity in x direction - still water
 v_start = np.zeros((n,n)) # velocity in y direction - still water
 
@@ -22,13 +22,14 @@ g = 1. # Gravity
 dt = grid_spacing / 100.
 
 def roll_theano(x, shift, axis):
-    ndim = 2 # how do I compute the number of dimensions from x?
-    allslice = slice(0,maxint,1)
-    shift = shift % n
-    front_slice = slice(shift,maxint,1)
-    front_list = [allslice]*axis + [front_slice] + [allslice]*(ndim-axis-1)
-    end_slice = slice(0,shift,1)
-    end_list = [allslice]*axis + [end_slice] + [allslice]*(ndim-axis-1)
+    # A slice of all elements in a dimension ':'
+    allslice = slice(None)
+    # List of slices describing the front half [:, :, shift:, :]
+    front_slice = slice(shift,None)
+    front_list = [allslice]*axis + [front_slice] + [allslice]*(x.ndim-axis-1)
+    # List of slices describing the back half [:, :, :shift, :]
+    end_slice = slice(0,shift)
+    end_list = [allslice]*axis + [end_slice] + [allslice]*(x.ndim-axis-1)
     return T.join(axis,
                 T.Subtensor(front_list)(x),
                 T.Subtensor(end_list)(x))
@@ -80,14 +81,14 @@ def d_dt(eta, u, v, g, b=0):
 
     return deta_dt, du_dt, dv_dt
 
-def step(eta, u, v, g, dt=dt):
+def step(eta, u, v, g, dt=dt, b=0):
     """
     Step forward eta, u, v one step in time of duration dt
 
     See Also:
         d_dt
     """
-    deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g)
+    deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g, b)
 
     eta = eta + deta_dt * dt
     u = u + du_dt * dt
