@@ -1,23 +1,21 @@
-from numpy import *
+import numpy as np
 from pylab import figure, imshow, title, colorbar
 
-box_size = 1.
-
-
-# Initial Conditions
 n = 100
-u = zeros((n,n)) # velocity in x direction
-v = zeros((n,n)) # velocity in y direction
+u_start = np.zeros((n,n)) # velocity in x direction - still water
+v_start = np.zeros((n,n)) # velocity in y direction - still water
 
-eta = ones((n,n)) # pressure deviation (like height)
-x,y = mgrid[:n,:n]
-droplet_x, droplet_y = 50, 50
+# eta (like height) will be uniform with a perturbation in the center
+eta_start = np.ones((n,n)) # pressure deviation (like height)
+x,y = np.mgrid[:n,:n]
+droplet_x, droplet_y = n/2, n/2
 rr = (x-droplet_x)**2 + (y-droplet_y)**2
-eta[rr<10**2] = 1.1 # add a perturbation in pressure surface
+eta_start[rr<10**2] = 1.1 # add a perturbation in pressure surface
 
+# Parameters describing simulation
+box_size = 1.
 grid_spacing =  1.0*box_size / n
-g = 1.
-
+g = 1. # Gravity
 dt = grid_spacing / 100.
 
 def spatial_derivative(A, axis=0):
@@ -33,7 +31,7 @@ def spatial_derivative(A, axis=0):
         d_dx
         d_dy
     """
-    return (roll(A, -1, axis) - roll(A, 1, axis)) / (grid_spacing*2.)
+    return (np.roll(A, -1, axis) - np.roll(A, 1, axis)) / (grid_spacing*2.)
 
 def d_dx(A):
     return spatial_derivative(A,1)
@@ -46,7 +44,7 @@ def d_dt(eta, u, v, g, b=0):
     http://en.wikipedia.org/wiki/Shallow_water_equations#Non-conservative_form
     """
     for x in [eta, u, v]: # type check
-        assert isinstance(x, ndarray) and not isinstance(x, matrix)
+        assert isinstance(x, np.ndarray) and not isinstance(x, np.matrix)
 
     du_dt = -g*d_dx(eta) - b*u
     dv_dt = -g*d_dy(eta) - b*v
@@ -57,7 +55,7 @@ def d_dt(eta, u, v, g, b=0):
     return deta_dt, du_dt, dv_dt
 
 
-def evolveEuler(eta, u, v, g, dt=dt):
+def evolveEuler(eta, u, v, g, dt=dt, b=0):
     """
     Evolve state (eta, u, v, g) forward in time using simple Euler method
     x_{n+1} = x_{n} +   dx/dt * d_t
@@ -73,7 +71,7 @@ def evolveEuler(eta, u, v, g, dt=dt):
     yield eta, u, v, time # return initial conditions as first state in sequence
 
     while(True):
-        deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g)
+        deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g, b=b)
 
         eta = eta + deta_dt * dt
         u = u + du_dt * dt
@@ -82,7 +80,7 @@ def evolveEuler(eta, u, v, g, dt=dt):
 
         yield eta, u, v, time
 
-def demo(eta=eta, u=u, v=v, g=g, dt=dt, endTime=.3):
+def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, b=0, endTime=.3):
     trajectory = evolveEuler(eta, u, v, g, dt)
 
     # Figure with initial conditions
@@ -109,7 +107,7 @@ def d_dt_conservative(eta, u, v, g):
     http://en.wikipedia.org/wiki/Shallow_water_equations#Conservative_form
     """
     for x in [eta, u, v]: # type check
-        assert isinstance(x, ndarray) and not isinstance(x, matrix)
+        assert isinstance(x, np.ndarray) and not isinstance(x, np.matrix)
 
     deta_dt = -d_dx(eta*u) -d_dy(eta*v)
     du_dt = (deta_dt*u - d_dx(eta*u**2 + 1./2*g*eta**2) - d_dy(eta*u*v)) / eta
