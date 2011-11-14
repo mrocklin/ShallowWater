@@ -132,3 +132,18 @@ def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, endTime=.3):
     # Figure after some time has passed
     figure(); title('time=%f'%endTime)
     imshow(eta); colorbar()
+
+def demo_bulk(endTime = .3, n=3):
+    fp = build_fp(1, endTime)
+    fp_bulk = build_fp_bulk(1, endTime, n)
+    # function takes 2d-array => 3d-array by stacking input n times
+    bcast = lambda x: x[None, ...] * ones((n,))[:,None,None]
+
+    #
+    de_out, du_out, dv_out = fp(eta_start,u_start,v_start, deta_start,
+            du_start, dv_start)
+    de_out_stack, du_out_stack, dv_out_stack = fp_bulk(eta_start,u_start,
+            v_start, bcast(deta_start), bcast(du_start), bcast(dv_start))
+
+    # Make sure that the computations are identical
+    assert (de_out == de_out_stack[1]).all()
