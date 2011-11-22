@@ -17,7 +17,7 @@ def make2DTensor(name):
     """
     return T.TensorType(dtype='float64', broadcastable=(False,False))(name)
 
-def evolveTime(g, endTime, dt=dt):
+def evolveTime(endTime, dt=dt, **kwargs):
     """
     Creates theano function
 
@@ -44,7 +44,7 @@ def evolveTime(g, endTime, dt=dt):
 
     in_state = (eta_in, u_in, v_in)
     result, updates = theano.scan(
-            fn = lambda eta,u,v: step(eta,u,v, g, dt),
+            fn = lambda eta,u,v: step(eta,u,v, dt, **kwargs),
             outputs_info = in_state,
             n_steps = numsteps, name='timeEvolutionScanOp')
 
@@ -54,15 +54,15 @@ def evolveTime(g, endTime, dt=dt):
 
     return eta_in, u_in, v_in, eta_out, u_out, v_out
 
-def build_f(g, endTime, dt=dt, **kwargs):
-    eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(g,endTime, dt)
+def build_f(endTime, dt=dt, **kwargs):
+    eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(endTime, dt,**kwargs)
 
-    f = theano.function([eta_in, u_in, v_in], [eta_out, u_out, v_out], **kwargs)
+    f = theano.function([eta_in, u_in, v_in], [eta_out, u_out, v_out])
 
     return f
 
-def build_fp(g, endTime, dt=dt, **kwargs):
-    eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(g,endTime, dt)
+def build_fp(endTime, dt=dt, **kwargs):
+    eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(endTime, dt,**kwargs)
 
     deta_in = make2DTensor('deta')
     du_in = make2DTensor('du')
@@ -76,9 +76,9 @@ def build_fp(g, endTime, dt=dt, **kwargs):
 
     return fp
 
-def build_fp_bulk(g, endTime, n, dt=dt):
+def build_fp_bulk(endTime, n, dt=dt, **kwargs):
     # the normal computation of eta_out, u_out, v_out = f(eta_in, u_in, v_in)
-    eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(g,endTime, dt)
+    eta_in, u_in, v_in, eta_out, u_out, v_out = evolveTime(endTime, dt,**kwargs)
 
     make3DTensor = lambda name : T.TensorType(dtype='float64',
             broadcastable=(False,False,False))(name)
@@ -117,10 +117,10 @@ def build_fp_bulk(g, endTime, n, dt=dt):
 
     return fp_bulk
 
-def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, endTime=.3):
+def demo(eta=eta_start, u=u_start, v=v_start, dt=dt, endTime=.3, **kwargs):
 
     # Create time evolution function
-    f = build_f(1, endTime, dt=dt)
+    f = build_f(endTime, dt=dt, **kwargs)
 
     # Figure with initial conditions
     figure(); title('Initial conditions')
@@ -133,9 +133,9 @@ def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, endTime=.3):
     figure(); title('time=%f'%endTime)
     imshow(eta); colorbar()
 
-def demo_bulk(endTime = .3, n=3):
-    fp = build_fp(1, endTime)
-    fp_bulk = build_fp_bulk(1, endTime, n)
+def demo_bulk(endTime = .3, n=3, **kwargs):
+    fp = build_fp(endTime, **kwargs)
+    fp_bulk = build_fp_bulk(endTime, n, **kwargs)
     # function takes 2d-array => 3d-array by stacking input n times
     bcast = lambda x: x[None, ...] * ones((n,))[:,None,None]
 

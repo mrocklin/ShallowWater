@@ -4,7 +4,7 @@ from pylab import figure, imshow, title, colorbar
 from sys import maxint
 
 # Initial Conditions
-n = 50
+n = 100
 u_start = np.zeros((n,n)) # velocity in x direction - still water
 v_start = np.zeros((n,n)) # velocity in y direction - still water
 
@@ -18,7 +18,7 @@ eta_start[rr<10**2] = 1.1 # add a perturbation in pressure surface
 # Parameters describing simulation
 box_size = 1.
 grid_spacing =  1.0*box_size / n
-g = 1. # Gravity
+g_default = 1. # Gravity
 dt = grid_spacing / 100.
 
 def roll_theano(x, shift, axis):
@@ -69,26 +69,33 @@ def d_dy(A):
     return spatial_derivative(A,0)
 
 
-def d_dt(eta, u, v, g, b=0):
+def d_dt(eta, u, v, g=g_default, b=0, k=0):
     """
     http://en.wikipedia.org/wiki/Shallow_water_equations#Non-conservative_form
+    eta - pressure difference / "height"
+    u   - x velocity
+    v   - y velocity
+    b   - viscosicty
+    k   - dispersion coefficient (.001 produces nice results)
     """
     du_dt = -g*d_dx(eta) - b*u
     dv_dt = -g*d_dy(eta) - b*v
 
     H = 0#eta.mean() - our definition of eta includes this term
-    deta_dt = -d_dx(u * (H+eta)) - d_dy(v * (H+eta))
+    deta_dt = (-d_dx(u * (H+eta)) - d_dy(v * (H+eta)) +
+            k*(d_dx(d_dx(eta)) + d_dy(d_dy(eta)))) # Diffusion term
+
 
     return deta_dt, du_dt, dv_dt
 
-def step(eta, u, v, g, dt=dt, b=0):
+def step(eta, u, v, dt=dt, **kwargs):
     """
     Step forward eta, u, v one step in time of duration dt
 
     See Also:
         d_dt
     """
-    deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g, b)
+    deta_dt, du_dt, dv_dt = d_dt(eta, u, v, **kwargs)
 
     eta = eta + deta_dt * dt
     u = u + du_dt * dt

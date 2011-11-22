@@ -15,7 +15,7 @@ eta_start[rr<10**2] = 1.1 # add a perturbation in pressure surface
 # Parameters describing simulation
 box_size = 1.
 grid_spacing =  1.0*box_size / n
-g = 1. # Gravity
+g_default = 1. # Gravity
 dt = grid_spacing / 100.
 
 def spatial_derivative(A, axis=0):
@@ -39,7 +39,7 @@ def d_dy(A):
     return spatial_derivative(A,0)
 
 
-def d_dt(eta, u, v, g, b=0):
+def d_dt(eta, u, v, g=g_default, b=0, k=0):
     """
     http://en.wikipedia.org/wiki/Shallow_water_equations#Non-conservative_form
     """
@@ -50,12 +50,13 @@ def d_dt(eta, u, v, g, b=0):
     dv_dt = -g*d_dy(eta) - b*v
 
     H = 0#eta.mean() - our definition of eta includes this term
-    deta_dt = -d_dx(u * (H+eta)) - d_dy(v * (H+eta))
+    deta_dt = (-d_dx(u * (H+eta)) - d_dy(v * (H+eta)) +
+            k*(d_dx(d_dx(eta)) + d_dy(d_dy(eta)))) # Diffusion term
 
     return deta_dt, du_dt, dv_dt
 
 
-def evolveEuler(eta, u, v, g, dt=dt, b=0):
+def evolveEuler(eta, u, v, dt=dt, **kwargs):
     """
     Evolve state (eta, u, v, g) forward in time using simple Euler method
     x_{n+1} = x_{n} +   dx/dt * d_t
@@ -71,7 +72,7 @@ def evolveEuler(eta, u, v, g, dt=dt, b=0):
     yield eta, u, v, time # return initial conditions as first state in sequence
 
     while(True):
-        deta_dt, du_dt, dv_dt = d_dt(eta, u, v, g, b=b)
+        deta_dt, du_dt, dv_dt = d_dt(eta, u, v, **kwargs)
 
         eta = eta + deta_dt * dt
         u = u + du_dt * dt
@@ -80,8 +81,8 @@ def evolveEuler(eta, u, v, g, dt=dt, b=0):
 
         yield eta, u, v, time
 
-def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, b=0, endTime=.3):
-    trajectory = evolveEuler(eta, u, v, g, dt)
+def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, b=0, endTime=.3, k=0):
+    trajectory = evolveEuler(eta, u, v, g, dt, k=k)
 
     # Figure with initial conditions
     eta, u, v, time = trajectory.next()
