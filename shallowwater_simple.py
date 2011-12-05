@@ -38,20 +38,27 @@ def d_dx(A):
 def d_dy(A):
     return spatial_derivative(A,0)
 
+def Fu(t):
+    return 10*np.sin(10*t)
+def Fv(t):
+    return 0
+def Feta(t):
+    return 0
 
-def d_dt(eta, u, v, g=g_default, b=0, k=0):
+def d_dt(eta, u, v, t, g=g_default, b=0, k=0):
     """
     http://en.wikipedia.org/wiki/Shallow_water_equations#Non-conservative_form
     """
     for x in [eta, u, v]: # type check
         assert isinstance(x, np.ndarray) and not isinstance(x, np.matrix)
 
-    du_dt = -g*d_dx(eta) - b*u
-    dv_dt = -g*d_dy(eta) - b*v
+    du_dt = -g*d_dx(eta) - b*u + Fu(t)
+    dv_dt = -g*d_dy(eta) - b*v + Fv(t)
 
     H = 0#eta.mean() - our definition of eta includes this term
-    deta_dt = (-d_dx(u * (H+eta)) - d_dy(v * (H+eta)) +
-            k*(d_dx(d_dx(eta)) + d_dy(d_dy(eta)))) # Diffusion term
+    deta_dt = (-d_dx(u * (H+eta)) - d_dy(v * (H+eta)) + # Advection
+                k*(d_dx(d_dx(eta)) + d_dy(d_dy(eta))) + # Diffusion term
+                Feta(t))                                # Forcing
 
     return deta_dt, du_dt, dv_dt
 
@@ -72,7 +79,7 @@ def evolveEuler(eta, u, v, dt=dt, **kwargs):
     yield eta, u, v, time # return initial conditions as first state in sequence
 
     while(True):
-        deta_dt, du_dt, dv_dt = d_dt(eta, u, v, **kwargs)
+        deta_dt, du_dt, dv_dt = d_dt(eta, u, v, time, **kwargs)
 
         eta = eta + deta_dt * dt
         u = u + du_dt * dt
@@ -81,8 +88,8 @@ def evolveEuler(eta, u, v, dt=dt, **kwargs):
 
         yield eta, u, v, time
 
-def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, b=0, endTime=.3, k=0):
-    trajectory = evolveEuler(eta, u, v, g, dt, k=k)
+def demo(eta=eta_start, u=u_start, v=v_start, dt=dt, b=0, endTime=.3, k=0):
+    trajectory = evolveEuler(eta, u, v, dt=dt, k=k)
 
     # Figure with initial conditions
     eta, u, v, time = trajectory.next()
