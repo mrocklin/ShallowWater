@@ -24,14 +24,14 @@ dt = grid_spacing / 100.
 def roll(x, shift, axis):
     """
     A numpy-theano agnostic version of the numpy.roll operator
-    calls either numpy.roll or theano.tensor.RollOp depending on class
+    calls either numpy.roll or theano.tensor.roll depending on class
 
     See numpy.roll for usage
     """
     if isinstance(x, np.ndarray):
         return np.roll(x, shift, axis)
     if isinstance(x, T.basic.TensorVariable):
-        return T.RollOp(shift, axis)(x)
+        return T.roll(x, shift, axis)
     raise NotImplementedError()
 
 def spatial_derivative(A, axis=0):

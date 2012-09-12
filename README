@@ -35,7 +35,6 @@ shallowwater_python :
     
 shallowwater_theano : 
     Uses shallowwater_base and the theano project to generate code.
-    Depends currently on my roll_op branch of theano
 
 There is an additional file for clarity
 
