@@ -13,12 +13,13 @@ def make2DTensor(name):
 
 def evolveTime(g, endTime, dt=dt):
     """
-    Creates theano function
+    Returns theano graph to solve the Shallow Water Equations
 
         to evolve (eta,u,v) at time zero
         to (eta,u,v) at time endTime
 
-    >>> f = evolveTime(1, .3)
+    >>> inputs, outputs = evolveTime(1, .3)
+    >>> f = theano.function(inputs, outputs)
     >>> eta_end, u_end, v_end = f(eta_start, u_start, v_start)
     """
 
@@ -38,13 +39,13 @@ def evolveTime(g, endTime, dt=dt):
     u_out = result[1][-1]
     v_out = result[2][-1]
 
-    f = theano.function([eta_in, u_in, v_in], [eta_out, u_out, v_out])
-    return f
+    return [eta_in, u_in, v_in], [eta_out, u_out, v_out]
 
 def demo(eta=eta_start, u=u_start, v=v_start, g=g, dt=dt, endTime=.3):
 
     # Create time evolution function
-    f = evolveTime(1, endTime, dt)
+    inputs, outputs = evolveTime(1, endTime, dt)
+    f = theano.function(inputs, outputs)
 
     # Figure with initial conditions
     figure(); title('Initial conditions')
